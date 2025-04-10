@@ -24,7 +24,7 @@ class EsetRegister(object):
         logging.info('[EMAIL] Register page loading...')
         console_log('\n[EMAIL] Register page loading...', INFO, silent_mode=SILENT_MODE)
         if isinstance(self.email_obj, WEB_WRAPPER_EMAIL_APIS_CLASSES):
-            self.driver.switch_to.new_window('EsetRegister')
+            self.driver.switch_to.new_window('tab')
             self.window_handle = self.driver.current_window_handle
         self.driver.get('https://login.eset.com/Register')
         uCE(self.driver, f"return {GET_EBID}('email') != null")
@@ -127,16 +127,18 @@ class EsetKeygen(object):
         try:
             for button in self.driver.find_elements('tag name', 'button'):
                 if button.get_attribute('innerText').strip().lower() == 'continue':
-                    exec_js(f'{GET_EBCN}("{button.get_attribute("class")}")[0].click()')
+                    button.click()
                     break
+                time.sleep(0.05)
             else:
                 raise RuntimeError('Continue button error!')
             uCE(self.driver, f"return {CLICK_WITH_BOOL}({GET_EBAV}('button', 'data-label', 'subscription-choose-trial-esbs-card-button'))")
             time.sleep(1)
             for button in self.driver.find_elements('tag name', 'button'):
                 if button.get_attribute('innerText').strip().lower() == 'continue':
-                    exec_js(f'{GET_EBCN}("{button.get_attribute("class")}")[0].click()')
+                    button.click()
                     break
+                time.sleep(0.05)
             else:
                 raise RuntimeError('Continue button error!')
             logging.info(f'[{self.mode}] Request successfully sent!')
@@ -226,7 +228,7 @@ class EsetProtectHubRegister(object):
         logging.info('Loading ESET ProtectHub Page...')
         console_log('\nLoading ESET ProtectHub Page...', INFO, silent_mode=SILENT_MODE)
         if isinstance(self.email_obj, WEB_WRAPPER_EMAIL_APIS_CLASSES):
-            self.driver.switch_to.new_window('EsetBusinessRegister')
+            self.driver.switch_to.new_window('tab')
             self.window_handle = self.driver.current_window_handle
         self.driver.get('https://protecthub.eset.com/public/registration?culture=en-US')
         uCE(self.driver, f'return {GET_EBID}("continue") != null')
@@ -446,20 +448,26 @@ class EsetProtectHubKeygen(object):
         try:
             self.driver.execute_script(f'return {GET_EBID}("license-actions-button")').click()
             time.sleep(1)
-            self.driver.execute_script(f'return {GET_EBID}("3-0-action_remove_license")').click()
+            button = self.driver.find_element('xpath', '//a[.//div[text()="Remove license"]]')
+            if button is not None:
+                button.click()
             untilConditionExecute(self.driver, f'return {CLICK_WITH_BOOL}({GET_EBID}("remove-license-dlg-remove-btn"))', max_iter=15)
-            self.driver.execute_script(f'return {GET_EBID}("remove-license-dlg-remove-btn")').click()
+            time.sleep(2)
             for _ in range(DEFAULT_MAX_ITER//2):
+                try:
+                    self.driver.execute_script(f'return {GET_EBID}("remove-license-dlg-remove-btn")').click()
+                except:
+                    pass
                 if self.driver.page_source.lower().find('to keep the solutions up to date') == -1:
                     time.sleep(1)
                     logging.info('Key successfully deleted!!!')
-                    console_log('Key successfully deleted!!!\n', OK, silent_mode=SILENT_MODE)
+                    console_log('Key successfully deleted!!!', OK, silent_mode=SILENT_MODE)
                     return True
                 time.sleep(DEFAULT_DELAY)
         except:
             pass
         logging.error('Failed to delete key, this error has no effect on the operation of the key!!!')
-        console_log('Failed to delete key, this error has no effect on the operation of the key!!!\n', ERROR, silent_mode=SILENT_MODE)
+        console_log('Failed to delete key, this error has no effect on the operation of the key!!!', ERROR, silent_mode=SILENT_MODE)
 
 def EsetVPNResetWindows(key_path='SOFTWARE\\ESET\\ESET VPN', value_name='authHash'):
     """Deletes the authHash value of ESET VPN"""
